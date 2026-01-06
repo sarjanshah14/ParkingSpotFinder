@@ -15,17 +15,6 @@ logger = logging.getLogger(__name__)
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
-# ---- PRICE MAP (FROM ENV) ----
-PRICE_MAP = {
-    "basic_month": settings.STRIPE_BASIC_MONTH,
-    "basic_year": settings.STRIPE_BASIC_YEAR,
-    "standard_month": settings.STRIPE_STANDARD_MONTH,
-    "standard_year": settings.STRIPE_STANDARD_YEAR,
-    "premium_month": settings.STRIPE_PREMIUM_MONTH,
-    "premium_year": settings.STRIPE_PREMIUM_YEAR,
-}
-
-
 # ------------------------------------------------------------------
 # CREATE CHECKOUT SESSION
 # ------------------------------------------------------------------
