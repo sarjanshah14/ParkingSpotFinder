@@ -167,6 +167,15 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 
+STRIPE_BASIC_MONTH = os.getenv("STRIPE_BASIC_MONTH")
+STRIPE_BASIC_YEAR = os.getenv("STRIPE_BASIC_YEAR")
+STRIPE_STANDARD_MONTH = os.getenv("STRIPE_STANDARD_MONTH")
+STRIPE_STANDARD_YEAR = os.getenv("STRIPE_STANDARD_YEAR")
+STRIPE_PREMIUM_MONTH = os.getenv("STRIPE_PREMIUM_MONTH")
+STRIPE_PREMIUM_YEAR = os.getenv("STRIPE_PREMIUM_YEAR")
+
+FRONTEND_SUCCESS_URL = os.getenv("FRONTEND_SUCCESS_URL", "https://parkingspotfinder.onrender.com/success")
+FRONTEND_CANCEL_URL = os.getenv("FRONTEND_CANCEL_URL", "https://parkingspotfinder.onrender.com/pricing")
 
 # ------------------------------------------------------------------------------
 # Stripe
