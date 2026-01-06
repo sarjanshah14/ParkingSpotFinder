@@ -50,7 +50,7 @@ def create_checkout_session(request):
         )
 
     price_key = f"{plan_id}_{billing_period}"
-    price_id = PRICE_MAP.get(price_key)
+    price_id = settings.STRIPE_PRICE_IDS.get(price_key)
 
     if not price_id:
         return JsonResponse({"error": "Invalid plan"}, status=400)
