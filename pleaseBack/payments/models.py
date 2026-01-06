@@ -31,7 +31,7 @@ class Payment(models.Model):
         ('refunded', 'Refunded'),
     ]
     status = models.CharField(
-        max_length=20,
+        max_length=50,
         choices=STATUS_CHOICES,
         default='pending'
     )
