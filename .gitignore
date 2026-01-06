@@ -18,3 +18,6 @@ Thumbs.db
 
 # Logs
 *.log
+staticfiles/
+db.sqlite3
+.venv/
