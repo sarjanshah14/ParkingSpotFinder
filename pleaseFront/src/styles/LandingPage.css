@@ -1,0 +1,71 @@
+.landing-page {
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  .bg-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -2;
+  }
+  
+  .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: -1;
+  }
+  
+  .content {
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #fff;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .title {
+    font-size: 9rem;
+    font-weight: bold;
+    color: #07b7fd;
+  }
+  
+  .subtitle {
+    font-size: 1.25rem;
+    margin: 0.3rem 0;
+  }
+  
+  /* Hover effect for Get Started */
+  .btn-outline-light:hover {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+  }
+  
+  /* RESPONSIVENESS */
+  @media (max-width: 768px) {
+    .title {
+      font-size: 2.5rem;
+    }
+    .subtitle {
+      font-size: 1rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .title {
+      font-size: 2rem;
+    }
+    .subtitle {
+      font-size: 0.9rem;
+    }
+  }
+  

@@ -1,0 +1,20 @@
+# Node
+node_modules/
+.cache/
+build/
+dist/
+
+# Python / Django
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

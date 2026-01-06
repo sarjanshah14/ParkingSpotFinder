@@ -1,0 +1,65 @@
+{
+  "name": "pleaseletmepark",
+  "proxy": "http://localhost:8000",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@stripe/react-stripe-js": "^3.9.1",
+    "@stripe/stripe-js": "^7.8.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.11.0",
+    "bootstrap": "^5.3.7",
+    "bootstrap-icons": "^1.13.1",
+    "chart.js": "^4.5.0",
+    "d3": "^7.9.0",
+    "d3-cloud": "^1.2.7",
+    "d3-scale": "^4.0.2",
+    "leaflet": "^1.9.4",
+    "react": "^19.1.1",
+    "react-bootstrap": "^2.10.10",
+    "react-bootstrap-icons": "^1.11.6",
+    "react-chartjs-2": "^5.3.0",
+    "react-confetti": "^6.4.0",
+    "react-d3-cloud": "^1.0.6",
+    "react-dom": "^19.1.1",
+    "react-icons": "^5.5.0",
+    "react-leaflet": "^5.0.0",
+    "react-router-dom": "^6.30.1",
+    "react-scripts": "5.0.1",
+    "react-use": "^17.6.0",
+    "react-wordcloud": "^1.2.7",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "patch-package": "^8.0.0",
+    "postinstall-postinstall": "^2.1.0",
+    "webpack-dev-server": "^4.15.1"
+  }
+}
