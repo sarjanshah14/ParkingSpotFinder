@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from premises.models import Premise
 from django.utils import timezone
-from .utils import send_booking_confirmation_sms
+from .utils import send_sms
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 
@@ -51,12 +51,13 @@ class Booking(models.Model):
 @receiver(post_save, sender=Booking)
 def send_booking_sms(sender, instance, created, **kwargs):
     if created:
-        booking_details = {
-            'id': instance.id,
-            'premise_name': instance.premise.name,
-            'premise_location': instance.premise.location,
-            'duration': instance.duration,
-            'total_price': instance.total_price,
-            'start_time': instance.start_time.strftime("%Y-%m-%d %H:%M")
-        }
-        send_booking_confirmation_sms(instance.phone, booking_details)
+        message = (
+            f"Parking Booking Confirmed\n"
+            f"Location: {instance.premise.name}\n"
+            f"Duration: {instance.duration} hours\n"
+            f"Total: INR {instance.total_price}\n"
+            f"Booking ID: {instance.id}\n"
+            f"Start Time: {instance.start_time.strftime('%Y-%m-%d %H:%M')}\n"
+            f"Thank you for using letsPark!"
+        )
+        send_sms(instance.phone, message)

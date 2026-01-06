@@ -7,7 +7,7 @@ from .models import Booking
 from .serializers import BookingSerializer
 from premises.models import Premise
 from rest_framework import status
-from .utils import send_booking_confirmation_sms
+from .utils import send_sms
 import datetime
 class BookingCreateView(generics.CreateAPIView):
     queryset = Booking.objects.all()
@@ -31,7 +31,16 @@ class BookingCreateView(generics.CreateAPIView):
             'start_time': booking.start_time.strftime("%Y-%m-%d %H:%M")
         }
         # Send SMS (async would be better in production)
-        send_booking_confirmation_sms(booking.phone, booking_details)
+        message = (
+            f"Parking Booking Confirmed\n"
+            f"Location: {booking.premise.name}\n"
+            f"Duration: {booking.duration} hours\n"
+            f"Total: INR {booking.total_price}\n"
+            f"Booking ID: {booking.id}\n"
+            f"Start Time: {booking.start_time.strftime('%Y-%m-%d %H:%M')}\n"
+            f"Thank you for using letsPark!"
+        )
+        send_sms(booking.phone, message)
         
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
