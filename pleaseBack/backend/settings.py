@@ -173,7 +173,7 @@ STRIPE_STANDARD_MONTH = os.getenv("STRIPE_STANDARD_MONTH")
 STRIPE_STANDARD_YEAR = os.getenv("STRIPE_STANDARD_YEAR")
 STRIPE_PREMIUM_MONTH = os.getenv("STRIPE_PREMIUM_MONTH")
 STRIPE_PREMIUM_YEAR = os.getenv("STRIPE_PREMIUM_YEAR")
-
+FRONTEND_URL = "https://parkingspotfinder.onrender.com"
 FRONTEND_SUCCESS_URL = os.getenv("FRONTEND_SUCCESS_URL", "https://parkingspotfinder.onrender.com/success")
 FRONTEND_CANCEL_URL = os.getenv("FRONTEND_CANCEL_URL", "https://parkingspotfinder.onrender.com/pricing")
 
@@ -187,7 +187,6 @@ STRIPE_PUBLIC_KEY = os.getenv("STRIPE_PUBLIC_KEY")
 # ------------------------------------------------------------------------------
 # Frontend
 # ------------------------------------------------------------------------------
-FRONTEND_URL = os.getenv("FRONTEND_URL")
 
 
 # ------------------------------------------------------------------------------
