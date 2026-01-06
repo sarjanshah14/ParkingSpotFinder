@@ -21,24 +21,24 @@ const Success = () => {
   });
 
   useEffect(() => {
-    const verifyPayment = async () => {
+    const verifyStripePayment = async () => {
       const query = new URLSearchParams(location.search);
       const sessionId = query.get('session_id');
-
+  
       if (!sessionId) {
         setState({ loading: false, error: 'Missing payment session ID', payment: null });
         return;
       }
-
+  
       try {
         const data = await verifyPayment(sessionId);
-
-        if (data.status === 'success') {
+  
+        if (data.status === 'success' || data.payment_status === 'paid') {
           setState({
             loading: false,
             error: null,
             payment: {
-              id: data.payment_id,
+              id: data.payment_id || data.session_id,
               amount: data.amount,
               currency: data.currency,
               plan: data.plan_id,
@@ -62,8 +62,8 @@ const Success = () => {
         });
       }
     };
-
-    verifyPayment();
+  
+    verifyStripePayment();
   }, [location]);
 
   if (state.loading) {
