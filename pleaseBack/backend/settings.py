@@ -26,6 +26,7 @@ DEBUG = os.getenv("DEBUG") == "True"
 ALLOWED_HOSTS = [
     "parking-backend-pypn.onrender.com",
     ".onrender.com",
+    
 ]
 
 
