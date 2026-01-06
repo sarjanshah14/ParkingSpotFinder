@@ -100,6 +100,7 @@ function AuthPage() {
         const data = await loginUser(form.username, form.password);
         localStorage.setItem("token", data.access);
         localStorage.setItem("refreshToken", data.refresh);
+        
         navigate("/dashboard");
       } else {
         await registerUser(form.username, form.email, form.password);

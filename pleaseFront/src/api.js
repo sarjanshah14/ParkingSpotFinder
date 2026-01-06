@@ -133,6 +133,8 @@ export const createCheckoutSession = async (planId, billingPeriod) => {
   const response = await api.post("/create-checkout-session/", {
     plan_id: planId,
     billing_period: billingPeriod,
+    customer_email: "test@example.com"
+
   });
   return response.data;
 };
