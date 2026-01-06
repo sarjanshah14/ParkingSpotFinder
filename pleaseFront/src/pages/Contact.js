@@ -8,6 +8,7 @@ import {
     FaFacebook, FaTwitter, FaInstagram, FaLinkedin,
     FaCheck, FaTimes, FaStar
 } from 'react-icons/fa';
+import { submitContact, submitReview } from '../api';
 
 const Contact = () => {
     const [formData, setFormData] = useState({
@@ -46,26 +47,12 @@ const Contact = () => {
         setErrorMessage('');
 
         try {
-            const response = await fetch('http://localhost:8000/api/mess/contact/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData)
-            });
-
-            const data = await response.json();
-
-            if (response.ok && data.status === 'success') {
-                setSubmitStatus('success');
-                setFormData({ name: '', email: '', message: '' });
-            } else {
-                setSubmitStatus('error');
-                setErrorMessage('Failed to send message. Please try again.');
-            }
+            await submitContact(formData);
+            setSubmitStatus('success');
+            setFormData({ name: '', email: '', message: '' });
         } catch (error) {
             setSubmitStatus('error');
-            setErrorMessage('An error occurred while sending your message.');
+            setErrorMessage('Failed to send message. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -93,26 +80,12 @@ const Contact = () => {
         }
 
         try {
-            const response = await fetch('http://localhost:8000/api/reviews/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(reviewData)
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                setReviewSubmitStatus('success');
-                setReviewData({ name: '', rating: 0, review: '' });
-            } else {
-                setReviewSubmitStatus('error');
-                setReviewErrorMessage('Failed to submit review. Please try again.');
-            }
+            await submitReview(reviewData);
+            setReviewSubmitStatus('success');
+            setReviewData({ name: '', rating: 0, review: '' });
         } catch (error) {
             setReviewSubmitStatus('error');
-            setReviewErrorMessage('An error occurred while submitting your review.');
+            setReviewErrorMessage('Failed to submit review. Please try again.');
         } finally {
             setReviewLoading(false);
         }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Nav, Card, Badge, Button, Row, Col, Spinner } from 'react-bootstrap';
-import axios from 'axios';
+import { fetchUserBookings, cancelBooking, completeBooking } from '../api';
 import { formatBookingDate } from '../utils/DateUtils';
 
 const Bookings = () => {
@@ -15,16 +15,7 @@ const Bookings = () => {
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-
-        const response = await axios.get('/api/bookings/user-bookings/', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-
-        const allBookings = response.data;
+        const allBookings = await fetchUserBookings();
 
         setBookings({
           current: allBookings.filter(b => b.status === 'confirmed'),
@@ -43,16 +34,7 @@ const Bookings = () => {
 
   const handleCancelBooking = async (bookingId) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `/api/bookings/bookings/${bookingId}/cancel/`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      await cancelBooking(bookingId);
 
       // Refresh bookings after cancellation
       const updatedBookings = { ...bookings };
@@ -70,16 +52,7 @@ const Bookings = () => {
   };
   const handleCompleteBooking = async (bookingId) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `/api/bookings/bookings/${bookingId}/complete/`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      await completeBooking(bookingId);
 
       // Update local state
       const updatedBookings = { ...bookings };
@@ -93,7 +66,6 @@ const Bookings = () => {
       }
     } catch (error) {
       console.error('Error completing booking:', error);
-      alert(error.response?.data?.error || 'Failed to complete booking');
     }
   };
 

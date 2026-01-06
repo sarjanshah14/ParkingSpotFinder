@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Container, Row, Col, Card, Button, Badge } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { fetchUserBookings, fetchReviews, refreshToken } from "../api";
 import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
 import * as d3 from "d3";
 import * as d3Cloud from "d3-cloud";
@@ -14,35 +14,7 @@ const Dashboard = () => {
   const chartRef = useRef();
   const wordCloudRef = useRef();
 
-  const getValidToken = async () => {
-    let token = localStorage.getItem("token");
-    const refreshToken = localStorage.getItem("refreshToken");
 
-    if (!token || !refreshToken) return null;
-
-    try {
-      await axios.get("/api/bookings/user-bookings/", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return token;
-    } catch (err) {
-      if (err.response && err.response.status === 401) {
-        try {
-          const res = await axios.post("/api/users/token/refresh/", {
-            refresh: refreshToken,
-          });
-
-          const newToken = res.data.access;
-          localStorage.setItem("token", newToken);
-          return newToken;
-        } catch (refreshErr) {
-          console.error("Refresh token failed", refreshErr);
-          return null;
-        }
-      }
-      return null;
-    }
-  };
 
   // Render star icons for review
   const renderStars = (rating) => {
@@ -193,29 +165,21 @@ const createWordCloud = () => {
 
 
   useEffect(() => {
-    const fetchBookings = async () => {
-      const token = await getValidToken();
-      if (!token) {
-        console.error("No valid token, redirect to login");
-        return;
-      }
-
+    const loadBookings = async () => {
       try {
-        const res = await axios.get("/api/bookings/user-bookings/", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const lastFive = Array.isArray(res.data) ? res.data.slice(-6).reverse() : [];
+        const data = await fetchUserBookings();
+        const lastFive = Array.isArray(data) ? data.slice(-6).reverse() : [];
         setBookings(lastFive);
       } catch (err) {
         console.error("Error fetching bookings", err);
       }
     };
 
-    const fetchReviews = async () => {
+    const loadReviews = async () => {
       try {
         setLoadingReviews(true);
-        const response = await axios.get("/api/reviews/");
-        setReviews(Array.isArray(response.data) ? response.data : []);
+        const data = await fetchReviews();
+        setReviews(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Error fetching reviews", error);
       } finally {
@@ -223,8 +187,8 @@ const createWordCloud = () => {
       }
     };
 
-    fetchBookings();
-    fetchReviews();
+    loadBookings();
+    loadReviews();
   }, []);
 
   useEffect(() => {

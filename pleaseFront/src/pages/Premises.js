@@ -8,7 +8,7 @@ import {
   FaRegStar, FaSearch, FaFilter
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { fetchPremises } from '../api';
 
 const Premises = () => {
   const navigate = useNavigate();
@@ -30,10 +30,10 @@ const Premises = () => {
 
   // Fetch premises from backend
   useEffect(() => {
-    const fetchPremises = async () => {
+    const loadPremises = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/api/premises/');
-        const premisesWithCity = response.data.map(premise => ({
+        const data = await fetchPremises();
+        const premisesWithCity = data.map(premise => ({
           ...premise,
           city: extractCity(premise.location)
         }));
@@ -46,7 +46,7 @@ const Premises = () => {
       }
     };
 
-    fetchPremises();
+    loadPremises();
   }, [extractCity]);
 
   // Filter premises

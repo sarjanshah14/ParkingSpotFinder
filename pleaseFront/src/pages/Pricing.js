@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Spinner } from 'react-bootstrap';
 import { FaCheck, FaStar, FaCrown } from 'react-icons/fa';
 import { loadStripe } from '@stripe/stripe-js';
-import axios from 'axios';
+import { createCheckoutSession } from '../api';
 
-const stripePromise = loadStripe('pk_test_51Rtd171yRBtzWAxgUOmQdUViaHo1srTcLlXy54GbArsUVkXkF49bJWsiJFHKqWy7dADyhttYNACtL7c4ZUSxA5Z300ayMcDTeC');
+// ✅ Stripe public key from env (NO hardcoding)
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY);
 
 const Pricing = () => {
   const [isYearly, setIsYearly] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -69,35 +69,35 @@ const Pricing = () => {
     }
   ];
 
+
+
   const handlePlanSelect = async (plan) => {
     setLoading(true);
     setError(null);
 
     try {
-      // Get customer email (you might get this from your auth system)
-      const customerEmail = 's@gmail.com'; // Replace with actual user email
-
-      // Create checkout session
-      const response = await axios.post('http://localhost:8000/api/create-checkout-session/', {
-        plan_id: plan.id,
-        billing_period: isYearly ? 'year' : 'month',
-        customer_email: customerEmail
-      });
-
-      const { sessionId } = response.data;
       const stripe = await stripePromise;
+      if (!stripe) {
+        throw new Error('Stripe failed to initialize');
+      }
 
-      // Redirect to Stripe checkout
+      const billingPeriod = isYearly ? 'year' : 'month';
+
+      const { sessionId } = await createCheckoutSession(
+        plan.id,
+        billingPeriod
+      );
+
       const { error } = await stripe.redirectToCheckout({
-        sessionId: sessionId
+        sessionId
       });
 
       if (error) {
         throw error;
       }
     } catch (err) {
-      setError(err.message || 'Failed to initiate payment');
       console.error('Checkout error:', err);
+      setError(err.message || 'Failed to initiate payment');
     } finally {
       setLoading(false);
     }
@@ -107,9 +107,14 @@ const Pricing = () => {
     <>
       <div
         className="d-flex align-items-center justify-content-center text-center text-white bg-primary shadow-lg mb-4"
-        style={{ minHeight: "25vh", width: "100%",backgroundImage: "linear-gradient(135deg,rgb(5, 50, 100) 0%,rgb(56, 130, 194) 100%)", // darker gradient
+        style={{
+          minHeight: "25vh",
+          width: "100%",
+          backgroundImage:
+            "linear-gradient(135deg,rgb(5, 50, 100) 0%,rgb(56, 130, 194) 100%)",
           position: "relative",
-          overflow: "hidden" }}
+          overflow: "hidden"
+        }}
       >
         <div className="px-4">
           <h1 className="display-3 fw-bold">Choose Your Plan</h1>
@@ -120,7 +125,6 @@ const Pricing = () => {
         </div>
       </div>
 
-      {/* Billing Toggle */}
       <Container className="py-5">
         <Row className="mb-5">
           <Col className="text-center">
@@ -146,7 +150,6 @@ const Pricing = () => {
           </Col>
         </Row>
 
-        {/* Error Message */}
         {error && (
           <Row className="mb-4">
             <Col className="text-center">

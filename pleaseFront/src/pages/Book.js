@@ -9,6 +9,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import axios from 'axios';
 import 'leaflet/dist/leaflet.css';
+import { fetchPremises, createBooking } from '../api';
 
 // Validation constants
 const PHONE_REGEX = /^[6-9]\d{9}$/; // Indian phone numbers
@@ -71,29 +72,26 @@ function SetViewToCurrentLocation({ setUserLocation, setCurrentPosition }) {
   return null;
 }
 
-const MapController = React.memo(({ selectedPremise, selectedCity, cityCoordinates, markers }) => {
+function MapController({ selectedPremise, selectedCity, cityCoordinates, markers }) {
   const map = useMap();
-  const prevPremiseRef = useRef();
+  const prevPremiseRef = useRef(null);
 
   useEffect(() => {
     if (selectedPremise && selectedPremise !== prevPremiseRef.current) {
       const marker = markers[selectedPremise.id];
-      if (marker && map) {
+      if (marker) {
         map.flyTo([selectedPremise.latitude, selectedPremise.longitude], 15);
-        setTimeout(() => {
-          if (marker?.getPopup()) {
-            marker.openPopup();
-          }
-        }, 300);
+        setTimeout(() => marker.openPopup(), 300);
       }
       prevPremiseRef.current = selectedPremise;
     } else if (selectedCity && cityCoordinates[selectedCity]) {
       map.flyTo(cityCoordinates[selectedCity], 13);
     }
-  }, [selectedPremise, selectedCity, map, cityCoordinates, markers]);
+  }, [selectedPremise, selectedCity, cityCoordinates, markers, map]);
 
   return null;
-});
+}
+
 
 const Book = () => {
   const [cities, setCities] = useState([]);
@@ -126,11 +124,7 @@ const Book = () => {
     'Vadodara': [22.3072, 73.1812]
   };
 
-  const registerMarker = useCallback((id, marker) => {
-    if (marker) {
-      markersRef.current[id] = marker;
-    }
-  }, []);
+ 
 
   const extractCity = useCallback((location) => {
     if (!location) return 'Other';
@@ -185,7 +179,7 @@ const Book = () => {
       duration: '',
       bookingDateTime: ''
     };
-
+    
     // Name validation
     if (!bookingForm.name.trim()) {
       newErrors.name = 'Name is required';
@@ -227,19 +221,19 @@ const Book = () => {
   };
 
   useEffect(() => {
-    const fetchPremises = async () => {
+    const loadPremises = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/api/premises/');
-        const data = response.data.filter(p => {
+        const data = await fetchPremises();
+        const filteredData = data.filter(p => {
           const city = extractCity(p.location);
           return city === 'Ahmedabad' || city === 'Vadodara';
         });
 
-        const uniqueCities = [...new Set(data.map(p => extractCity(p.location)))];
+        const uniqueCities = [...new Set(filteredData.map(p => extractCity(p.location)))];
         const grouped = {};
 
         uniqueCities.forEach(city => {
-          grouped[city] = data.filter(p => extractCity(p.location) === city);
+          grouped[city] = filteredData.filter(p => extractCity(p.location) === city);
         });
 
         setCities(uniqueCities);
@@ -251,7 +245,7 @@ const Book = () => {
       }
     };
 
-    fetchPremises();
+    loadPremises();
   }, [extractCity]);
 
   const filteredPremises = (selectedCity ? premises[selectedCity] || [] : Object.values(premises).flat())
@@ -270,24 +264,19 @@ const Book = () => {
       return;
     }
 
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-      alert('Please login to book');
-      return;
-    }
+    const token = localStorage.getItem('access_token');
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/api/bookings/bookings/', {
+      const bookingData = {
         premise_id: selectedPremise.id,
         name: bookingForm.name,
         phone: bookingForm.phone.replace(/\D/g, ''), // Remove non-digits
         duration: bookingForm.duration,
         total_price: calculateTotalPrice(),
         booking_time: bookingForm.bookingDateTime
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      };
+
+      const response = await createBooking(bookingData);
 
       // Set success details for modal
       setBookingSuccessDetails({
@@ -295,7 +284,7 @@ const Book = () => {
         location: selectedPremise.location,
         duration: bookingForm.duration,
         total: calculateTotalPrice(),
-        bookingId: response.data.id,
+        bookingId: response.id,
         phone: bookingForm.phone.replace(/\D/g, ''),
         bookingDateTime: bookingForm.bookingDateTime
       });
@@ -386,6 +375,7 @@ const Book = () => {
 
   return (
     <>
+    
       <div
         className="d-flex align-items-center justify-content-center text-center text-white bg-primary shadow-lg mb-4"
         style={{ minHeight: "25vh", width: "100%",backgroundImage: "linear-gradient(135deg,rgb(5, 50, 100) 0%,rgb(56, 130, 194) 100%)", // darker gradient
@@ -443,12 +433,17 @@ const Book = () => {
                     <Marker
                       key={premise.id}
                       position={[premise.latitude, premise.longitude]}
-                      eventHandlers={{ click: () => setSelectedPremise(premise) }}
                       icon={parkingIcon}
-                      ref={(ref) => ref && registerMarker(premise.id, ref)}
+                      eventHandlers={{
+                        click: () => setSelectedPremise(premise),
+                        add: (e) => {
+                          markersRef.current[premise.id] = e.target;
+                        }
+                      }}
                     >
                       {renderPopupContent(premise)}
                     </Marker>
+
                   ))}
                 </MapContainer>
               </Card.Body>

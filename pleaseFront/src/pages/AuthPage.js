@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button, Form, Alert } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import { loginUser, registerUser } from "../api";
 // Add these imports at the top
 import * as d3 from 'd3';
 
@@ -96,46 +97,20 @@ function AuthPage() {
 
     try {
       if (isLogin) {
-        const res = await fetch("/api/users/login/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            username: form.username,
-            password: form.password,
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          setError(data.detail || "Login failed.");
-          setLoading(false);
-          return;
-        }
+        const data = await loginUser(form.username, form.password);
         localStorage.setItem("token", data.access);
         localStorage.setItem("refreshToken", data.refresh);
         navigate("/dashboard");
       } else {
-        const res = await fetch("/api/users/signup/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            username: form.username,
-            email: form.email,
-            password: form.password,
-          }),
-        });
-        if (res.status === 201) {
-          setIsLogin(true);
-          setForm({ username: "", email: "", password: "", confirmPassword: "" });
-          setError("");
-          alert("Signup successful! Please login.");
-          navigate("/dashboard");
-        } else {
-          const data = await res.json();
-          setError(data.username ? data.username[0] : "Signup failed.");
-        }
+        await registerUser(form.username, form.email, form.password);
+        setIsLogin(true);
+        setForm({ username: "", email: "", password: "", confirmPassword: "" });
+        setError("");
+        alert("Signup successful! Please login.");
+        navigate("/dashboard");
       }
     } catch (err) {
-      setError("Something went wrong. Try again.");
+      setError(err.message || "Something went wrong. Try again.");
     }
 
     setLoading(false);
