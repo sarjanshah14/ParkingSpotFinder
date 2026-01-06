@@ -12,9 +12,7 @@ services:
 
     
     startCommand: |
-      python manage.py migrate --noinput &&
-      python manage.py loaddata data.json &&
-      gunicorn backend.wsgi:application
+      python manage.py migrate --noinput && python manage.py loaddata data.json && gunicorn backend.wsgi:application
 
 
     envVars:
