@@ -26,8 +26,3 @@ services:
         fromDatabase:
           name: parking-db
           property: connectionString
-
-databases:
-  - name: parking-db
-    plan: free
-    region: singapore
