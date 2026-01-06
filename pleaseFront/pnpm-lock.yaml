@@ -41,6 +41,9 @@ importers:
       d3:
         specifier: ^7.9.0
         version: 7.9.0
+      d3-cloud:
+        specifier: ^1.2.8
+        version: 1.2.8
       d3-scale:
         specifier: ^4.0.2
         version: 4.0.2
