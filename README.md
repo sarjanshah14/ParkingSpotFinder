@@ -1,112 +1,144 @@
 # PleaseLetMePark
 
-A full‑stack parking booking platform with a Django REST API backend and a React frontend. Supports JWT auth, premises browsing, bookings, reviews, and Stripe payments.
+A comprehensive, full‑stack parking booking platform designed to facilitate seamless reservations of parking spaces. The system features a robust **Django REST Framework** backend and a dynamic **React** frontend, integrating **Stripe** for secure payments and **Twilio** for real-time SMS notifications.
 
-### Project layout
+## Project Layout
+
 ```
 pleaseletmepark/
 ├─ pleaseBack/              # Django backend (Django 5 / DRF / JWT / Stripe)
 │  ├─ backend/              # Project settings and URLs
-│  ├─ bookings/             # Booking creation, cancel, complete, list
-│  ├─ payments/             # Stripe checkout + verification
-│  ├─ premises/             # Premise list & detail
-│  ├─ reviews/              # Review list/create
-│  ├─ users/                # Signup, login, token refresh
+│  ├─ bookings/             # Booking creation, cancellation, completion logic
+│  ├─ payments/             # Stripe checkout session & webhook verification
+│  ├─ premises/             # Premise management (locations, availability)
+│  ├─ reviews/              # User reviews and ratings
+│  ├─ users/                # Authentication (Signup, Login, Refresh)
 │  └─ manage.py
 └─ pleaseFront/             # React app (CRA)
-   └─ src/                  # UI pages and components
+   └─ src/                  # UI pages, components, and service integrations
 ```
 
 ---
 
-## Backend (Django + DRF)
+## Architecture & Technology Stack
 
-- Python 3.11+ recommended
-- Django REST Framework and JWT (SimpleJWT)
-- CORS enabled for the frontend dev server
-- SQLite dev database by default
+We chose a modern, scalable stack to ensure reliability and developer experience.
+
+-   **Backend: Django 5.2 & Django REST Framework (DRF)**
+    -   *Why?* DRF provides powerful tools for serialization and auth out-of-the-box. The browsable API and Django's built-in admin interface significantly speed up development compared to micro-frameworks like Flask.
+-   **Database: SQLite (Dev)**
+    -   *Note*: Easily swappable for PostgreSQL in production without code changes thanks to Django's ORM.
+-   **Authentication: JWT (SimpleJWT)**
+    -   *Why?* Stateless authentication allows for better scalability and easier integration with mobile clients or third-party services compared to session-based auth.
+-   **Payments: Stripe**
+    -   *Why?* Industry leader for security, compliance, and developer experience. We use Stripe Checkout for a secure, hosted payment UI.
+-   **Notifications: Twilio**
+    -   *Why?* Reliable global SMS delivery to keep users updated on their booking status instantly.
+
+---
+
+## Core Features & Modules
+
+### 1. User Management (`users/`)
+-   **Registration & Auth**: Users sign up with email/password. Passwords are hashed securely.
+-   **JWT Flow**: Upon login, users receive an Access Token (short-lived) and a Refresh Token (long-lived) to maintain sessions securely.
+
+### 2. Premises Management (`premises/`)
+-   **Geospatial Data**: Stores coordinates (lat/long) to render parking spots on a map.
+-   **Availability Tracking**: Tracks total vs. available spots to prevent overbooking.
+-   **Rich Metadata**: Includes images, features (CCTV, Covered, etc.), and pricing per hour.
+
+### 3. Bookings System (`bookings/`)
+-   **Smart Scheduling**: Automatically calculates end times based on duration.
+-   **State Management**: Bookings move through defined states: `Confirmed` → `Completed` or `Cancelled`.
+-   **Real-time Alerts**: Triggers Twilio SMS to the user immediately upon booking confirmation.
+
+### 4. Payments (`payments/`)
+-   **Secure Checkout**: specific endpoints create Stripe Checkout Sessions.
+-   **Verification**: A dedicated verify endpoint checks the session status with Stripe before finalizing the transaction record in our database.
+-   **Audit Trail**: Logs transaction IDs, amounts, and timestamps for every payment.
+
+### 5. Reviews (`reviews/`)
+-   **Quality Control**: Reviews can include a moderation flag (`is_approved`) to ensure content safety before being publicly visible.
+-   **Rating System**: 1-5 star rating validation.
+
+---
+
+## Key Data Flows
+
+### Booking Implementation Flow
+1.  **User Search**: Frontend requests `/api/premises/`.
+2.  **Selection**: User selects a spot. Frontend checks availability.
+3.  **Booking Request**: User submits booking details (time, duration).
+4.  **Creation**:
+    -   Backend validates logic (is the spot actually free?).
+    -   Calculates final price and timestamps.
+    -   Saves `Booking` object with status `CONFIRMED`.
+5.  **Notification**: Backend fires an async task to send SMS via Twilio.
+6.  **Response**: Returns booking details to Frontend.
+
+### Payment Implementation Flow
+1.  **Selection**: User chooses a subscription/feature plan.
+2.  **Session Creation**: Backend talks to Stripe API to generate a `checkout_session_id`.
+3.  **Redirect**: Frontend redirects user to the Stripe hosted payment page.
+4.  **Completion**: Stripe redirects user back to our `success_url`.
+5.  **Verification**: Frontend calls `/api/verify-payment/`. Backend confirms with Stripe that payment succeeded and updates local records.
+
+---
+
+## Backend Setup (Django)
+
+### Prerequisites
+-   Python 3.11+
+-   Virtual environment tool (venv)
 
 ### Quickstart
 
 ```bash
 cd pleaseBack
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
-pip install --upgrade pip
-pip install django djangorestframework djangorestframework-simplejwt django-cors-headers python-dotenv stripe twilio
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 
+# Run migrations to set up SQLite DB
 python manage.py migrate
-python manage.py createsuperuser  # optional
+
+# Optional: Create admin user
+python manage.py createsuperuser
+
+# Start Server
 python manage.py runserver 0.0.0.0:8000
 ```
+API available at: `http://localhost:8000/`
 
-The API will be available at `http://localhost:8000/`.
+### Environment Variables (.env)
+Create `pleaseBack/.env`:
 
-### Environment variables (.env)
-Place a `.env` file inside `pleaseBack/` (same level as `manage.py`) with:
-
-```env
+```ini
 # Django
-SECRET_KEY=change-me-in-production
+SECRET_KEY=your-secret-key-here
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 
 # Stripe
-STRIPE_SECRET_KEY=sk_test_xxx
-STRIPE_PUBLIC_KEY=pk_test_xxx
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PUBLIC_KEY=pk_test_...
 
-# Frontend URL (for redirects)
+# Frontend URL (for Redirects)
 FRONTEND_URL=http://localhost:3000
 
-# Twilio (optional if you use messaging)
-TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# Twilio (Optional)
+TWILIO_ACCOUNT_SID=AC...
+TWILIO_AUTH_TOKEN=...
 TWILIO_PHONE_NUMBER=+1234567890
 ```
 
-Relevant settings highlights from `backend/settings.py`:
-- `CORS_ALLOWED_ORIGINS` includes `http://localhost:3000` and `http://127.0.0.1:3000`
-- `REST_FRAMEWORK.DEFAULT_AUTHENTICATION_CLASSES` uses JWT
-- Uses SQLite dev DB by default
-
-### API routes
-Base prefix for most apps is `/api/`. Below is a concise list derived from the URL configs.
-
-- Auth (`/api/users/`)
-  - `POST /api/users/signup/` — create user
-  - `POST /api/users/login/` — obtain JWT pair
-  - `POST /api/users/token/refresh/` — refresh JWT
-
-- Premises (`/api/`)
-  - `GET /api/premises/` — list premises
-  - `GET /api/premises/<id>/` — premise detail
-
-- Bookings (`/api/bookings/`)
-  - `POST /api/bookings/bookings/` — create booking
-  - `POST /api/bookings/bookings/<booking_id>/cancel/` — cancel booking
-  - `POST /api/bookings/bookings/<booking_id>/complete/` — mark complete
-  - `GET  /api/bookings/user-bookings/` — list user bookings
-
-- Payments (`/api/`)
-  - `POST /api/create-checkout-session/` — create Stripe checkout session
-  - `POST /api/verify-payment/` — verify payment
-
-- Reviews (`/api/`)
-  - `GET  /api/reviews/` — list reviews
-  - `POST /api/reviews/` — create review
-
-- Admin
-  - `GET /admin/` — Django admin
-
-Note: Some endpoints likely require Authorization: `Bearer <access_token>`.
-
 ---
 
-## Frontend (React)
+## Frontend Setup (React)
 
-- Create React App with `react-scripts`
-- Uses `axios`, `react-router-dom`, `bootstrap`, `leaflet`/`react-leaflet`, and Stripe JS
-- Dev server proxies API to `http://localhost:8000` (see `pleaseFront/package.json` "proxy")
+### Prerequisites
+-   Node.js & npm/pnpm
 
 ### Quickstart
 
@@ -115,67 +147,56 @@ cd pleaseFront
 npm install
 npm start
 ```
+App available at: `http://localhost:3000/`
 
-The app will be available at `http://localhost:3000/`.
+### Environment Variables (`pleaseFront/.env`)
+Optional overrides:
 
-### Environment
-If needed in the frontend, create `pleaseFront/.env` (optional):
-```env
-# Example: override the proxy or provide public keys
+```ini
 REACT_APP_API_BASE=http://localhost:8000
-REACT_APP_STRIPE_PUBLIC_KEY=pk_test_xxx
+REACT_APP_STRIPE_PUBLIC_KEY=pk_test_...
 ```
 
 ---
 
-## Development workflow
+## API Routes Reference
 
-- Start backend first on port 8000
-- Start frontend on port 3000; the proxy forwards unknown paths to the backend
-- Use JWT login from the frontend or via API clients to hit protected endpoints
-
-### Common commands
-```bash
-# Backend
-cd pleaseBack
-source .venv/bin/activate
-python manage.py makemigrations
-python manage.py migrate
-python manage.py runserver
-
-# Frontend
-cd pleaseFront
-npm start
-npm run build
-```
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| **Auth** | | |
+| `POST` | `/api/users/signup/` | Create a new user account |
+| `POST` | `/api/users/login/` | Get JWT access/refresh tokens |
+| `POST` | `/api/users/token/refresh/` | Refresh expired access token |
+| **Premises** | | |
+| `GET` | `/api/premises/` | List all parking premises |
+| `GET` | `/api/premises/<id>/` | Get details for one premise |
+| **Bookings** | | |
+| `POST` | `/api/bookings/bookings/` | Create a new booking |
+| `GET` | `/api/bookings/user-bookings/` | List current user's bookings |
+| `POST` | `/api/bookings/bookings/<id>/cancel/` | Cancel a booking |
+| **Payments** | | |
+| `POST` | `/api/create-checkout-session/` | Init Stripe Checkout |
+| `POST` | `/api/verify-payment/` | Confirm payment status |
 
 ---
 
-## Testing
+## Production Roadmap & Recommendations
 
-- Backend: add tests under each Django app's `tests.py`, run with `python manage.py test`
-- Frontend: `npm test`
+To prepare this project for a production environment, we recommend the following:
 
----
-
-## Deployment notes (high‑level)
-
-- Set `DEBUG=False` and configure `ALLOWED_HOSTS`
-- Use a production database and a proper static files setup (e.g., WhiteNoise or a CDN)
-- Provide real `STRIPE_SECRET_KEY`/`STRIPE_PUBLIC_KEY`
-- Serve the React build via a static host or reverse proxy (e.g., Nginx) and point it to the backend API
-- Secure the Django `SECRET_KEY` and all credentials in your hosting environment
-
----
-
-## Troubleshooting
-
-- 401/403 responses: ensure you include `Authorization: Bearer <access_token>`
-- CORS errors: confirm `CORS_ALLOWED_ORIGINS` and frontend origin match
-- Stripe errors: verify keys and that the backend is reachable on the callback URLs
+1.  **Database**: Switch `DATABASES` setting to use **PostgreSQL** for better data integrity and concurrency.
+2.  **Security**:
+    -   Set `DEBUG=False`.
+    -   Configure `CORS_ALLOWED_ORIGINS` strictly.
+    -   Implement **Rate Limiting** on auth endpoints to prevent brute-force.
+3.  **Performance**:
+    -   Use **Redis** for caching frequently accessed data (like Premise lists).
+    -   Offload SMS sending to **Celery** tasks to avoid blocking API responses.
+4.  **Deployment**:
+    -   Use **Gunicorn** or **Uvicorn** behind **Nginx** for the backend.
+    -   Serve Frontend static build via CDN or Nginx.
 
 ---
 
 ## License
-
-MIT or proprietary — update as appropriate for your project. 
+MIT
