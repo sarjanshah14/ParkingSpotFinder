@@ -51,13 +51,17 @@ class Booking(models.Model):
 @receiver(post_save, sender=Booking)
 def send_booking_sms(sender, instance, created, **kwargs):
     if created:
-        message = (
-            f"Parking Booking Confirmed\n"
-            f"Location: {instance.premise.name}\n"
-            f"Duration: {instance.duration} hours\n"
-            f"Total: INR {instance.total_price}\n"
-            f"Booking ID: {instance.id}\n"
-            f"Start Time: {instance.start_time.strftime('%Y-%m-%d %H:%M')}\n"
-            f"Thank you for using letsPark!"
-        )
-        send_sms(instance.phone, message)
+        try:
+            message = (
+                f"Parking Booking Confirmed\n"
+                f"Location: {instance.premise.name}\n"
+                f"Duration: {instance.duration} hours\n"
+                f"Total: INR {instance.total_price}\n"
+                f"Booking ID: {instance.id}\n"
+                f"Start Time: {instance.start_time.strftime('%Y-%m-%d %H:%M')}\n"
+                f"Thank you for using letsPark!"
+            )
+            send_sms(instance.phone, message)
+        except Exception as e:
+            # Prevent any signal error from crashing the transaction/request
+            print(f"Error in send_booking_sms signal: {e}")
