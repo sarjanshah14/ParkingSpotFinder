@@ -50,8 +50,8 @@ def create_checkout_session(request):
             payment_method_types=["card"],
             customer_email=customer_email,
             line_items=[{"price": price_id, "quantity": 1}],
-            success_url="https://parkingspotfinder.onrender.com/success?session_id={CHECKOUT_SESSION_ID}",
-            cancel_url="https://parkingspotfinder.onrender.com/pricing",
+            success_url="https://parkingspotfinder.onrender.com/#/success?session_id={CHECKOUT_SESSION_ID}",
+            cancel_url="https://parkingspotfinder.onrender.com/#/pricing",
             metadata={
                 "plan_id": plan_id,
                 "billing_period": billing_period,

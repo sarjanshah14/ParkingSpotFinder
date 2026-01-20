@@ -154,21 +154,33 @@ const Pricing = () => {
         )}
 
         <Row className="justify-content-center mb-5">
-          <div className="d-inline-flex bg-light rounded-pill p-1">
-            <Button
-              size="sm"
-              variant={!isYearly ? "primary" : "light"}
-              onClick={() => setIsYearly(false)}
+          <div className="position-relative d-inline-block">
+            <div className="d-inline-flex bg-light rounded-pill p-1 border">
+              <Button
+                variant={null}
+                className={`rounded-pill px-4 py-2 fw-bold border-0 ${!isYearly ? "bg-white shadow-sm text-primary" : "text-muted"
+                  }`}
+                onClick={() => setIsYearly(false)}
+              >
+                Monthly
+              </Button>
+              <Button
+                variant={null}
+                className={`rounded-pill px-4 py-2 fw-bold border-0 ${isYearly ? "bg-white shadow-sm text-primary" : "text-muted"
+                  }`}
+                onClick={() => setIsYearly(true)}
+              >
+                Yearly
+              </Button>
+            </div>
+            <Badge
+              bg="success"
+              pill
+              className="position-absolute top-0 start-100 translate-middle"
+              style={{ fontSize: "0.8rem", border: "2px solid white" }}
             >
-              Monthly
-            </Button>
-            <Button
-              size="sm"
-              variant={isYearly ? "primary" : "light"}
-              onClick={() => setIsYearly(true)}
-            >
-              Yearly <Badge bg="success">Save 17%</Badge>
-            </Button>
+              Save 17%
+            </Badge>
           </div>
         </Row>
 
@@ -176,9 +188,8 @@ const Pricing = () => {
           {plans.map((plan) => (
             <Col lg={4} md={6} key={plan.id} className="mb-4">
               <Card
-                className={`h-100 ${
-                  plan.popular ? "border-primary shadow-lg" : "shadow"
-                }`}
+                className={`h-100 ${plan.popular ? "border-primary shadow-lg" : "shadow"
+                  }`}
               >
                 <Card.Body className="text-center p-4">
                   {plan.icon && (
