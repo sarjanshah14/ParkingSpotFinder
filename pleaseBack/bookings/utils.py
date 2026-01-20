@@ -7,20 +7,24 @@ import logging
 logger = logging.getLogger(__name__)
 
 def send_sms(phone, message):
-    if not all([
-        getattr(settings, 'TWILIO_ACCOUNT_SID', None),
-        getattr(settings, 'TWILIO_AUTH_TOKEN', None),
-        getattr(settings, 'TWILIO_PHONE_NUMBER', None)
-    ]):
-        return
-    try:
-        client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-        client.messages.create(
-            body=message,
-            from_=settings.TWILIO_PHONE_NUMBER,
-            to=f"+91{phone}"
-        )
-    except TwilioRestException:
-        pass
-    except Exception:
-        pass
+    # Twilio sending disabled to prevent errors due to lack of credits
+    logger.info(f"SMS would be sent to {phone}: {message}")
+    return
+    
+    # if not all([
+    #     getattr(settings, 'TWILIO_ACCOUNT_SID', None),
+    #     getattr(settings, 'TWILIO_AUTH_TOKEN', None),
+    #     getattr(settings, 'TWILIO_PHONE_NUMBER', None)
+    # ]):
+    #     return
+    # try:
+    #     client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+    #     client.messages.create(
+    #         body=message,
+    #         from_=settings.TWILIO_PHONE_NUMBER,
+    #         to=f"+91{phone}"
+    #     )
+    # except TwilioRestException:
+    #     pass
+    # except Exception:
+    #     pass
