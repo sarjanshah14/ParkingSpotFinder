@@ -129,10 +129,11 @@ export const completeBooking = async (bookingId) => {
    PAYMENTS
 ========================= */
 
-export const createCheckoutSession = async (planId, billingPeriod) => {
+export const createCheckoutSession = async (planId, billingPeriod, customerEmail) => {
   const response = await api.post("/create-checkout-session/", {
     plan_id: planId,
     billing_period: billingPeriod,
+    customer_email: customerEmail
   });
   return response.data;
 };

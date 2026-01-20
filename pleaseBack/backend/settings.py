@@ -19,13 +19,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ------------------------------------------------------------------------------
 # Core settings
 # ------------------------------------------------------------------------------
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-secret-key")
 
 DEBUG = os.getenv("DEBUG") == "True"
 
 ALLOWED_HOSTS = [
     "parking-backend-pypn.onrender.com",
     ".onrender.com",
+    "localhost",
+    "127.0.0.1",
 ]
 
 
@@ -61,7 +63,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -75,7 +77,6 @@ MIDDLEWARE = [
 # URLs / WSGI
 # ------------------------------------------------------------------------------
 ROOT_URLCONF = "backend.urls"
-
 WSGI_APPLICATION = "backend.wsgi.application"
 
 
@@ -100,16 +101,15 @@ TEMPLATES = [
 
 
 # ------------------------------------------------------------------------------
-# Database (PostgreSQL via Render)
+# Database
 # ------------------------------------------------------------------------------
 DATABASES = {
     "default": dj_database_url.config(
         default=os.getenv("DATABASE_URL"),
         conn_max_age=600,
-        ssl_require=os.getenv("DATABASE_URL", "").startswith("postgres"),
+        ssl_require=True,
     )
 }
-
 
 
 # ------------------------------------------------------------------------------
@@ -137,6 +137,7 @@ USE_TZ = True
 # ------------------------------------------------------------------------------
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 
 # ------------------------------------------------------------------------------
@@ -156,14 +157,20 @@ REST_FRAMEWORK = {
 
 
 # ------------------------------------------------------------------------------
-# CORS
+# CORS + CSRF (CRITICAL)
 # ------------------------------------------------------------------------------
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://parkingspotfinder.onrender.com",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://parkingspotfinder.onrender.com",
+    "https://parking-backend-pypn.onrender.com",
+]
 
 
 # ------------------------------------------------------------------------------
@@ -172,11 +179,26 @@ CORS_ALLOW_CREDENTIALS = True
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_PUBLIC_KEY = os.getenv("STRIPE_PUBLIC_KEY")
 
+# Stripe Price IDs (from environment)
+STRIPE_PRICE_IDS = {
+    "basic_month": os.getenv("STRIPE_BASIC_MONTH"),
+    "basic_year": os.getenv("STRIPE_BASIC_YEAR"),
+    "standard_month": os.getenv("STRIPE_STANDARD_MONTH"),
+    "standard_year": os.getenv("STRIPE_STANDARD_YEAR"),
+    "premium_month": os.getenv("STRIPE_PREMIUM_MONTH"),
+    "premium_year": os.getenv("STRIPE_PREMIUM_YEAR"),
+}
 
 # ------------------------------------------------------------------------------
-# Frontend
+# Frontend URLs
 # ------------------------------------------------------------------------------
-FRONTEND_URL = os.getenv("FRONTEND_URL")
+FRONTEND_URL = os.getenv(
+    "FRONTEND_URL",
+    "https://parkingspotfinder.onrender.com",
+)
+
+FRONTEND_SUCCESS_URL = f"{FRONTEND_URL}/success"
+FRONTEND_CANCEL_URL = f"{FRONTEND_URL}/pricing"
 
 
 # ------------------------------------------------------------------------------
@@ -203,5 +225,3 @@ LOGGING = {
         "level": "INFO",
     },
 }
-
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
