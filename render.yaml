@@ -12,6 +12,7 @@ services:
 
     
     startCommand: |
+      python manage.py fix_booking_db &&
       python manage.py migrate --noinput &&
       python manage.py init_admin &&
       gunicorn backend.wsgi:application
