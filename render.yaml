@@ -17,8 +17,6 @@ services:
       gunicorn backend.wsgi:application
 
 
-
-
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.9"

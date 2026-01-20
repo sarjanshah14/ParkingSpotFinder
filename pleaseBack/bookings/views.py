@@ -15,35 +15,26 @@ class BookingCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        
-        # Create booking
-        booking = serializer.save(user=request.user)
-        
-        # Prepare SMS details
-        booking_details = {
-            'id': booking.id,
-            'premise_name': booking.premise.name,
-            'premise_location': booking.premise.location,
-            'duration': booking.duration,
-            'total_price': booking.total_price,
-            'start_time': booking.start_time.strftime("%Y-%m-%d %H:%M")
-        }
-        # Send SMS (async would be better in production)
-        message = (
-            f"Parking Booking Confirmed\n"
-            f"Location: {booking.premise.name}\n"
-            f"Duration: {booking.duration} hours\n"
-            f"Total: INR {booking.total_price}\n"
-            f"Booking ID: {booking.id}\n"
-            f"Start Time: {booking.start_time.strftime('%Y-%m-%d %H:%M')}\n"
-            f"Thank you for using letsPark!"
-        )
-        send_sms(booking.phone, message)
-        
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            
+            # Create booking
+            # The post_save signal in models.py handles sending the SMS, 
+            # so we don't need to do it here manually.
+            booking = serializer.save(user=request.user)
+            
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        except Exception as e:
+            # Log the full stack trace to console (visible in Render logs)
+            import traceback
+            traceback.print_exc() 
+            # Return the error message in the response to help debugging
+            return Response(
+                {"error": "Internal Server Error", "details": str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
 class UserBookingListView(generics.ListAPIView):
     serializer_class = BookingSerializer
