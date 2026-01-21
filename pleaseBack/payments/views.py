@@ -1,12 +1,12 @@
-import json
 import logging
 from datetime import datetime
-
 import stripe
 from django.conf import settings
-from django.http import JsonResponse
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
 
 from .models import Payment
 
@@ -18,74 +18,73 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 # ------------------------------------------------------------------
 # CREATE CHECKOUT SESSION
 # ------------------------------------------------------------------
-@csrf_exempt
+@api_view(['POST'])
+@permission_classes([AllowAny]) # or IsAuthenticated if you require login
 def create_checkout_session(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "POST only"}, status=405)
-
     try:
-        data = json.loads(request.body)
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
+        data = request.data
+        plan_id = data.get("plan_id")
+        billing_period = data.get("billing_period")
+        customer_email = data.get("customer_email")
 
-    plan_id = data.get("plan_id")
-    billing_period = data.get("billing_period")
-    customer_email = data.get("customer_email")
+        if not all([plan_id, billing_period, customer_email]):
+            return Response(
+                {"error": "plan_id, billing_period, customer_email required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-    if not all([plan_id, billing_period, customer_email]):
-        return JsonResponse(
-            {"error": "plan_id, billing_period, customer_email required"},
-            status=400,
-        )
+        price_key = f"{plan_id}_{billing_period}"
+        price_id = settings.STRIPE_PRICE_IDS.get(price_key)
 
-    price_key = f"{plan_id}_{billing_period}"
-    price_id = settings.STRIPE_PRICE_IDS.get(price_key)
+        if not price_id:
+            return Response({"error": "Invalid plan configuration"}, status=status.HTTP_400_BAD_REQUEST)
 
-    if not price_id:
-        return JsonResponse({"error": "Invalid plan"}, status=400)
+        # Base metadata
+        metadata = {
+            "plan_id": plan_id,
+            "billing_period": billing_period,
+            "customer_email": customer_email,
+        }
+        
+        # Add user ID to metadata if authenticated
+        if request.user.is_authenticated:
+            metadata["user_id"] = str(request.user.id)
 
-    try:
         session = stripe.checkout.Session.create(
             mode="subscription",
             payment_method_types=["card"],
             customer_email=customer_email,
             line_items=[{"price": price_id, "quantity": 1}],
-            success_url="https://parkingspotfinder.onrender.com/#/success?session_id={CHECKOUT_SESSION_ID}",
-            cancel_url="https://parkingspotfinder.onrender.com/#/pricing",
-            metadata={
-                "plan_id": plan_id,
-                "billing_period": billing_period,
-                "customer_email": customer_email,
-            },
+            # Using HashRouter URLs
+            success_url=f"{settings.FRONTEND_URL}/#/success?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{settings.FRONTEND_URL}/#/pricing",
+            metadata=metadata,
             subscription_data={
-                "metadata": {
-                    "plan_id": plan_id,
-                    "billing_period": billing_period,
-                }
+                "metadata": metadata
             },
         )
 
         logger.info("Stripe checkout created: %s", session.id)
-
-        return JsonResponse({"sessionId": session.id})
+        return Response({"sessionId": session.id})
 
     except stripe.error.StripeError as e:
         logger.error("Stripe error: %s", str(e))
-        return JsonResponse({"error": str(e)}, status=400)
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     except Exception as e:
-        logger.exception("Unexpected error")
-        return JsonResponse({"error": "Server error"}, status=500)
+        logger.exception("Unexpected error in create_checkout_session")
+        return Response({"error": "Server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # ------------------------------------------------------------------
 # VERIFY PAYMENT
 # ------------------------------------------------------------------
-@csrf_exempt
+@api_view(['GET'])
+@permission_classes([AllowAny]) # We handle user association manually if present
 def verify_payment(request):
-    session_id = request.GET.get("session_id")
+    session_id = request.query_params.get("session_id")
     if not session_id:
-        return JsonResponse({"error": "session_id required"}, status=400)
+        return Response({"error": "session_id required"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         session = stripe.checkout.Session.retrieve(
@@ -94,52 +93,78 @@ def verify_payment(request):
 
         subscription = session.subscription
         customer_email = session.customer_email
+        
+        # Safely get metadata
+        meta = session.metadata or {}
+        plan_id = meta.get("plan_id", "unknown")
+        billing_period = meta.get("billing_period", "unknown")
+        
+        # Try to resolve user from metadata or request
+        user = None
+        if request.user.is_authenticated:
+            user = request.user
+        elif meta.get("user_id"):
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            try:
+                user = User.objects.get(pk=meta.get("user_id"))
+            except User.DoesNotExist:
+                pass
 
-        response = {
+        response_data = {
             "status": session.payment_status,
             "session_id": session.id,
             "customer_email": customer_email,
-            "plan_id": session.metadata.get("plan_id"),
-            "billing_period": session.metadata.get("billing_period"),
+            "plan_id": plan_id,
+            "billing_period": billing_period,
         }
 
         if subscription:
-            response.update(
-                {
-                    "subscription_id": subscription.id,
-                    "subscription_status": subscription.status,
-                    "current_period_end": subscription.current_period_end,
-                }
-            )
+            # It's a subscription object (object because of expand)
+            # Be careful if expand failed or type is different, but for 'subscription' mode it should be obj
+            sub_id = getattr(subscription, 'id', None)
+            sub_status = getattr(subscription, 'status', 'unknown')
+            current_period_end = getattr(subscription, 'current_period_end', None)
 
-            # Save payment record
+            response_data.update({
+                "subscription_id": sub_id,
+                "subscription_status": sub_status,
+                "current_period_end": current_period_end,
+            })
+
+            # Calculate amount safely
+            amount = 0
+            if session.amount_total:
+                amount = session.amount_total / 100
+
+            expires_at = None
+            if current_period_end:
+                expires_at = datetime.fromtimestamp(current_period_end, tz=timezone.utc)
+
+            # Update or Create Payment Record
             Payment.objects.update_or_create(
                 stripe_session_id=session.id,
                 defaults={
-                    "plan_id": response["plan_id"],
-                    "billing_period": response["billing_period"],
-                    "stripe_subscription_id": subscription.id,
-                    "amount_paid": session.amount_total / 100
-                    if session.amount_total
-                    else 0,
-                    "status": "completed"
-                    if session.payment_status == "paid"
-                    else "pending",
-                    "expires_at": datetime.fromtimestamp(
-                        subscription.current_period_end, tz=timezone.utc
-                    ),
+                    "user": user,
+                    "plan_id": plan_id,
+                    "billing_period": billing_period,
+                    "stripe_subscription_id": sub_id,
+                    "amount_paid": amount,
+                    "status": "completed" if session.payment_status == "paid" else "pending",
+                    "expires_at": expires_at,
                 },
             )
 
-        return JsonResponse(response)
+        return Response(response_data)
 
     except stripe.error.InvalidRequestError:
-        return JsonResponse({"error": "Invalid session ID"}, status=400)
+        return Response({"error": "Invalid session ID"}, status=status.HTTP_400_BAD_REQUEST)
 
     except stripe.error.StripeError as e:
         logger.error("Stripe error: %s", str(e))
-        return JsonResponse({"error": "Stripe error"}, status=400)
+        return Response({"error": "Stripe error"}, status=status.HTTP_400_BAD_REQUEST)
 
     except Exception as e:
         logger.exception("Verify payment failed")
-        return JsonResponse({"error": "Server error"}, status=500)
+        # Return the actual error in dev mode or log it, but generic for prod
+        return Response({"error": f"Server error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
