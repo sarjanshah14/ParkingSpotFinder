@@ -62,9 +62,19 @@ def create_checkout_session(request):
 
         # Construct URLs
         # Construct URLs
-        frontend_url = settings.FRONTEND_URL.strip() if settings.FRONTEND_URL else "https://parkingspotfinder.onrender.com"
-        success_url = f"{frontend_url}/success?session_id={{CHECKOUT_SESSION_ID}}"
-        cancel_url = f"{frontend_url}/pricing"
+        raw_frontend_url = getattr(settings, 'FRONTEND_URL', '')
+        # Fallback if empty or whitespace
+        if not raw_frontend_url or not str(raw_frontend_url).strip():
+            base_url = "https://parkingspotfinder.onrender.com"
+        else:
+            base_url = str(raw_frontend_url).strip()
+            
+        # Ensure no trailing slash
+        if base_url.endswith('/'):
+            base_url = base_url[:-1]
+
+        success_url = f"{base_url}/success?session_id={{CHECKOUT_SESSION_ID}}"
+        cancel_url = f"{base_url}/pricing"
         
         logger.info(f"Stripe URLs: Success={success_url}, Cancel={cancel_url}")
 
@@ -86,7 +96,8 @@ def create_checkout_session(request):
 
     except stripe.error.StripeError as e:
         logger.error("Stripe error: %s", str(e))
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # Include the tried URL in the error for debugging (remove in prod if needed)
+        return Response({"error": f"{str(e)} | Used Success URL: {success_url}"}, status=status.HTTP_400_BAD_REQUEST)
 
     except Exception as e:
         logger.exception("Unexpected error in create_checkout_session")
