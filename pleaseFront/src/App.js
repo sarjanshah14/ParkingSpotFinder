@@ -1,4 +1,4 @@
-import { HashRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { HashRouter as Router, Routes, Route, Outlet, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
@@ -15,34 +15,25 @@ import ContactPage from "./pages/Contact";
 import Pricing from "./pages/Pricing";
 import Success from "./pages/Success";
 
-// Wrapper component to decide when to show Navbar/Footer
+// Layout wrapper component
 function Layout({ darkMode, toggleTheme, onLogout }) {
-  const location = useLocation();
+  // We can choose to show/hide navbar based on additional logic if needed,
+  // but simpler to just exclude Auth from this layout if desired, 
+  // or keep it if AuthPage needs Navbar. 
+  // For now, let's keep the user's existing logic style but in proper structure.
 
-  // Hide Navbar/Footer on landing and auth pages
-  const hideLayout = location.pathname === "/";
+  // Actually, standard pattern: 
+  // LandingPage serves itself. 
+  // Main app pages use Layout.
 
   return (
-    <>
-      {!hideLayout && (
-        <Navbar darkMode={darkMode} toggleTheme={toggleTheme} onLogout={onLogout} />
-      )}
-
-      {/* Outlet for nested routes */}
-      <Routes>
-        <Route path="/auth" element={<AuthPage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/book" element={<BookPage />} />
-        <Route path="/bookings" element={<BookingsPage />} />
-        <Route path="/premises" element={<PremisesPage />} />
-        <Route path="/pricing" element={<Pricing />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/contact" element={<ContactPage />} />
-        <Route path="/success" element={<Success />} />
-      </Routes>
-
-      {!hideLayout && <Footer darkMode={darkMode} />}
-    </>
+    <div className="d-flex flex-column min-vh-100">
+      <Navbar darkMode={darkMode} toggleTheme={toggleTheme} onLogout={onLogout} />
+      <main className="flex-grow-1">
+        <Outlet />
+      </main>
+      <Footer darkMode={darkMode} />
+    </div>
   );
 }
 
@@ -77,13 +68,28 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        {/* All other routes use Layout */}
-        <Route
-          path="*"
-          element={
-            <Layout darkMode={darkMode} toggleTheme={toggleTheme} onLogout={onLogout} />
-          }
-        />
+
+        {/* Auth routes - typically usually standalone or share layout? 
+            Original code had AuthPage *inside* Layout but hideLayout check 
+            hid the navbar. 
+            Let's put AuthPage outside Layout to be cleaner if it doesn't need Navbar.
+        */}
+        <Route path="/auth" element={<AuthPage />} />
+
+        {/* Protected/Main Routes using Layout */}
+        <Route element={<Layout darkMode={darkMode} toggleTheme={toggleTheme} onLogout={onLogout} />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/book" element={<BookPage />} />
+          <Route path="/bookings" element={<BookingsPage />} />
+          <Route path="/premises" element={<PremisesPage />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/success" element={<Success />} />
+        </Route>
+
+        {/* Fallback */}
+        <Route path="*" element={<LandingPage />} />
       </Routes>
     </Router>
   );
