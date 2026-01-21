@@ -77,7 +77,14 @@ def create_checkout_session(request):
         if not base_url.startswith("http"):
             # If completely borked, default to prod
             base_url = "https://parkingspotfinder.onrender.com"
-            
+        
+        # PRODUCTION OVERRIDE: If we see localhost in the URL but we are likely in prod (implied by bad env var)
+        # Force it to the real domain to save the user.
+        if "localhost" in base_url or "127.0.0.1" in base_url:
+             # Only do this if we want to force prod links. 
+             # Given the user's frustration, let's hardcode the known good prod URL as a fallback for 'bad' urls.
+             base_url = "https://parkingspotfinder.onrender.com"
+
         # Ensure no trailing slash
         if base_url.endswith('/'):
             base_url = base_url[:-1]
