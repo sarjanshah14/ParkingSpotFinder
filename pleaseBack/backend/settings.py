@@ -196,6 +196,8 @@ FRONTEND_URL = os.getenv(
     "FRONTEND_URL",
     "https://parkingspotfinder.onrender.com",
 )
+if FRONTEND_URL:
+    FRONTEND_URL = FRONTEND_URL.strip()
 
 FRONTEND_SUCCESS_URL = f"{FRONTEND_URL}/success"
 FRONTEND_CANCEL_URL = f"{FRONTEND_URL}/pricing"
