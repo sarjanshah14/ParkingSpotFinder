@@ -23,21 +23,31 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 def create_checkout_session(request):
     try:
         data = request.data
+        # Log incoming data for debugging
+        logger.info(f"Create Checkout Session Payload: {data}")
+
         plan_id = data.get("plan_id")
         billing_period = data.get("billing_period")
         customer_email = data.get("customer_email")
 
         if not all([plan_id, billing_period, customer_email]):
-            return Response(
-                {"error": "plan_id, billing_period, customer_email required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            missing = [k for k in ["plan_id", "billing_period", "customer_email"] if not data.get(k)]
+            error_msg = f"Missing required fields: {', '.join(missing)}"
+            logger.error(error_msg)
+            return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
 
         price_key = f"{plan_id}_{billing_period}"
         price_id = settings.STRIPE_PRICE_IDS.get(price_key)
 
+        logger.info(f"Resolving Price Key: {price_key} -> {price_id}")
+
         if not price_id:
-            return Response({"error": "Invalid plan configuration"}, status=status.HTTP_400_BAD_REQUEST)
+            available_keys = list(settings.STRIPE_PRICE_IDS.keys())
+            logger.error(f"Invalid plan configuration. Key: {price_key}, Available: {available_keys}")
+            return Response(
+                {"error": f"Invalid plan configuration for {price_key}. Contact support."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Base metadata
         metadata = {
@@ -50,14 +60,19 @@ def create_checkout_session(request):
         if request.user.is_authenticated:
             metadata["user_id"] = str(request.user.id)
 
+        # Construct URLs
+        success_url = f"{settings.FRONTEND_URL}/#/success?session_id={{CHECKOUT_SESSION_ID}}"
+        cancel_url = f"{settings.FRONTEND_URL}/#/pricing"
+        
+        logger.info(f"Stripe URLs: Success={success_url}, Cancel={cancel_url}")
+
         session = stripe.checkout.Session.create(
             mode="subscription",
             payment_method_types=["card"],
             customer_email=customer_email,
             line_items=[{"price": price_id, "quantity": 1}],
-            # Using HashRouter URLs
-            success_url=f"{settings.FRONTEND_URL}/#/success?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{settings.FRONTEND_URL}/#/pricing",
+            success_url=success_url,
+            cancel_url=cancel_url,
             metadata=metadata,
             subscription_data={
                 "metadata": metadata
