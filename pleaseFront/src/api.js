@@ -5,10 +5,27 @@ import axios from "axios";
  */
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL, // e.g. https://parking-backend-pypn.onrender.com/api
+  withCredentials: true, // Send cookies with requests
 });
 
+// Helper to get CSRF token from cookie
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
 /**
- * Request interceptor – attach access token
+ * Request interceptor – attach access token and CSRF token
  */
 api.interceptors.request.use(
   (config) => {
@@ -16,6 +33,15 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Add CSRF token for non-GET requests
+    if (config.method !== 'get') {
+      const csrfToken = getCookie('csrftoken');
+      if (csrfToken) {
+        config.headers['X-CSRFToken'] = csrfToken;
+      }
+    }
+
     return config;
   },
   (error) => Promise.reject(error)

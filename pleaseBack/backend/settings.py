@@ -177,6 +177,11 @@ CSRF_TRUSTED_ORIGINS = [
     "https://parking-backend-pypn.onrender.com",
 ]
 
+# CSRF settings for same-domain frontend/backend
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF token
+
 
 # ------------------------------------------------------------------------------
 # Stripe
