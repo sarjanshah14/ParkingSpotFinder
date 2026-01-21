@@ -11,6 +11,10 @@ services:
       cd ../pleaseFront && npm install && npm run build
       cd ../pleaseBack
       
+      # Copy frontend build to backend
+      mkdir -p frontend_build
+      cp -r ../pleaseFront/build/* frontend_build/
+      
       # Prepare Backend
       pip install -r requirements.txt
       python manage.py collectstatic --noinput
