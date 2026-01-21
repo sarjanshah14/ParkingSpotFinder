@@ -61,8 +61,10 @@ def create_checkout_session(request):
             metadata["user_id"] = str(request.user.id)
 
         # Construct URLs
-        success_url = f"{settings.FRONTEND_URL}/success?session_id={{CHECKOUT_SESSION_ID}}"
-        cancel_url = f"{settings.FRONTEND_URL}/pricing"
+        # Construct URLs
+        frontend_url = settings.FRONTEND_URL.strip() if settings.FRONTEND_URL else "https://parkingspotfinder.onrender.com"
+        success_url = f"{frontend_url}/success?session_id={{CHECKOUT_SESSION_ID}}"
+        cancel_url = f"{frontend_url}/pricing"
         
         logger.info(f"Stripe URLs: Success={success_url}, Cancel={cancel_url}")
 
