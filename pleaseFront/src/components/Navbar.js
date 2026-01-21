@@ -5,7 +5,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 const CustomNavbar = ({ darkMode, toggleTheme, onLogout }) => {
   const [scrolled, setScrolled] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(
-    !!localStorage.getItem("token")
+    !!localStorage.getItem("access_token")
   );
 
   const navigate = useNavigate();
@@ -27,18 +27,20 @@ const CustomNavbar = ({ darkMode, toggleTheme, onLogout }) => {
 
   // ✅ check auth whenever location changes (so after login it updates immediately)
   useEffect(() => {
-    setIsAuthenticated(!!localStorage.getItem("token"));
+    setIsAuthenticated(!!localStorage.getItem("access_token"));
   }, [location]);
 
   // ✅ also listen for login/logout changes across tabs
   useEffect(() => {
-    const checkAuth = () => setIsAuthenticated(!!localStorage.getItem("token"));
+    const checkAuth = () => setIsAuthenticated(!!localStorage.getItem("access_token"));
     window.addEventListener("storage", checkAuth);
     return () => window.removeEventListener("storage", checkAuth);
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("token"); // Cleanup old key if any
     setIsAuthenticated(false);
     if (onLogout) onLogout();
     navigate("/");
@@ -54,9 +56,8 @@ const CustomNavbar = ({ darkMode, toggleTheme, onLogout }) => {
 
   return (
     <nav
-      className={`navbar navbar-expand-lg sticky-top ${
-        scrolled ? "navbar-scrolled shadow-sm" : ""
-      } ${darkMode ? "navbar-dark bg-dark" : "navbar-light bg-light"}`}
+      className={`navbar navbar-expand-lg sticky-top ${scrolled ? "navbar-scrolled shadow-sm" : ""
+        } ${darkMode ? "navbar-dark bg-dark" : "navbar-light bg-light"}`}
     >
       <div className="container">
         <button

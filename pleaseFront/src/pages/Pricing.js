@@ -12,25 +12,42 @@ import {
 } from "react-bootstrap";
 import { FaCheck, FaStar, FaCrown } from "react-icons/fa";
 import { loadStripe } from "@stripe/stripe-js";
-import { createCheckoutSession } from "../api";
+import { createCheckoutSession, getStripeConfig } from "../api";
 
 /* ------------------------------------------------------------------
-   Stripe init (fail fast if missing)
+   Stripe init (dynamic)
 ------------------------------------------------------------------- */
-const STRIPE_PUBLIC_KEY = process.env.REACT_APP_STRIPE_PUBLIC_KEY;
-
-if (!STRIPE_PUBLIC_KEY) {
-  console.error("❌ REACT_APP_STRIPE_PUBLIC_KEY is missing");
-}
-
-const stripePromise = STRIPE_PUBLIC_KEY
-  ? loadStripe(STRIPE_PUBLIC_KEY)
-  : null;
+let stripePromise = null;
 
 const Pricing = () => {
   const [isYearly, setIsYearly] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isStripeLoaded, setIsStripeLoaded] = useState(false);
+
+  React.useEffect(() => {
+    const initStripe = async () => {
+      try {
+        const envKey = process.env.REACT_APP_STRIPE_PUBLIC_KEY;
+        if (envKey && envKey !== "pk_test_YOUR_STRIPE_PUBLIC_KEY_HERE") {
+          stripePromise = loadStripe(envKey);
+          setIsStripeLoaded(true);
+        } else {
+          // Fetch from backend
+          const { publicKey } = await getStripeConfig();
+          if (publicKey) {
+            stripePromise = loadStripe(publicKey);
+            setIsStripeLoaded(true);
+          } else {
+            console.error("❌ Stripe public key not found in backend or env");
+          }
+        }
+      } catch (err) {
+        console.error("❌ Failed to load Stripe config:", err);
+      }
+    };
+    initStripe();
+  }, []);
 
   const plans = [
     {

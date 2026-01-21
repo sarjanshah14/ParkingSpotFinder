@@ -214,3 +214,13 @@ def verify_payment(request):
         logger.exception("Verify payment failed")
         # Return the actual error in dev mode or log it, but generic for prod
         return Response({"error": f"Server error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_stripe_config(request):
+    """
+    Returns the Stripe public key for the frontend to initialize.
+    """
+    return Response({
+        "publicKey": settings.STRIPE_PUBLIC_KEY
+    })

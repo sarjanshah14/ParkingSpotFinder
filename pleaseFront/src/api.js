@@ -4,8 +4,9 @@ import axios from "axios";
  * Axios instance
  */
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL, // e.g. https://parking-backend-pypn.onrender.com/api
-  withCredentials: true, // Send cookies with requests
+  // Use /api as baseURL if no env var is provided
+  baseURL: process.env.REACT_APP_API_BASE_URL || "/api",
+  withCredentials: true,
 });
 
 // Helper to get CSRF token from cookie
@@ -95,7 +96,7 @@ const logout = () => {
 
 /* =========================
    AUTH
-========================= */
+ ========================= */
 
 export const loginUser = async (username, password) => {
   const response = await api.post("/users/login/", {
@@ -120,7 +121,7 @@ export const registerUser = async (username, email, password) => {
 
 /* =========================
    PREMISES
-========================= */
+ ========================= */
 
 export const fetchPremises = async () => {
   const response = await api.get("/premises/");
@@ -129,7 +130,7 @@ export const fetchPremises = async () => {
 
 /* =========================
    BOOKINGS
-========================= */
+ ========================= */
 
 export const createBooking = async (bookingData) => {
   const response = await api.post("/bookings/bookings/", bookingData);
@@ -153,7 +154,12 @@ export const completeBooking = async (bookingId) => {
 
 /* =========================
    PAYMENTS
-========================= */
+ ========================= */
+
+export const getStripeConfig = async () => {
+  const response = await api.get("/config/");
+  return response.data;
+};
 
 export const createCheckoutSession = async (planId, billingPeriod, customerEmail) => {
   const response = await api.post("/create-checkout-session/", {
@@ -165,6 +171,7 @@ export const createCheckoutSession = async (planId, billingPeriod, customerEmail
 };
 
 export const verifyPayment = async (sessionId) => {
+  // Use relative path with leading slash to ensure it uses baseURL correctly
   const response = await api.get("/verify-payment/", {
     params: { session_id: sessionId },
   });
