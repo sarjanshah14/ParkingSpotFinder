@@ -9,6 +9,7 @@ urlpatterns = [
     path('api/', include('payments.urls')),
     path('api/mess/', include('mess.urls')),
     path('api/', include('reviews.urls')),
+    path('debug-files/', __import__('backend.debug_views', fromlist=['debug_files']).debug_files),
 ]
 
 # Fallback for SPA - serve React app for all non-API routes
