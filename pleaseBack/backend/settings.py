@@ -86,7 +86,7 @@ WSGI_APPLICATION = "backend.wsgi.application"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / ".." / "pleaseFront" / "build"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -137,6 +137,11 @@ USE_TZ = True
 # ------------------------------------------------------------------------------
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+# Point to React build folder
+STATICFILES_DIRS = [
+    BASE_DIR / ".." / "pleaseFront" / "build",
+    BASE_DIR / ".." / "pleaseFront" / "build" / "static",
+]
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 
