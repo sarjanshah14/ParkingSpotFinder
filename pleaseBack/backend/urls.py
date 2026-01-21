@@ -16,4 +16,5 @@ urlpatterns = [
 from django.urls import re_path
 from backend.spa_views import serve_react_app
 
-urlpatterns += [re_path(r'^.*$', serve_react_app)]
+# Only catch routes that DON'T start with /api/ or /admin/
+urlpatterns += [re_path(r'^(?!api/)(?!admin/).*$', serve_react_app)]
