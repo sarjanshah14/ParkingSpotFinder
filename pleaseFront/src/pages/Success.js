@@ -24,33 +24,37 @@ const Success = () => {
     const verifyStripePayment = async () => {
       const query = new URLSearchParams(location.search);
       const sessionId = query.get('session_id');
-  
+
       if (!sessionId) {
         setState({ loading: false, error: 'Missing payment session ID', payment: null });
         return;
       }
-  
+
       try {
         const data = await verifyPayment(sessionId);
-  
-        if (data.status === 'success' || data.payment_status === 'paid') {
+
+        // API returns "status": "complete" or "unpaid" (for trials/async)
+        // We consider "paid", "unpaid", "complete" as success for display purposes
+        const validStatuses = ['paid', 'unpaid', 'complete', 'active'];
+
+        if (validStatuses.includes(data.status) || validStatuses.includes(data.payment_status)) {
           setState({
             loading: false,
             error: null,
             payment: {
-              id: data.payment_id || data.session_id,
-              amount: data.amount,
-              currency: data.currency,
+              id: data.session_id,
+              amount: data.amount_paid || '0.00',
+              currency: 'USD', // Default as API might not return currency
               plan: data.plan_id,
               period: data.billing_period,
-              nextBilling: data.next_billing_date,
-              status: data.payment_status
+              nextBilling: data.current_period_end ? parseInt(data.current_period_end) * 1000 : null,
+              status: data.status
             }
           });
         } else {
           setState({
             loading: false,
-            error: data.message || 'Payment verification failed',
+            error: data.message || 'Payment verification returned unexpected status: ' + data.status,
             payment: null
           });
         }
@@ -62,7 +66,7 @@ const Success = () => {
         });
       }
     };
-  
+
     verifyStripePayment();
   }, [location]);
 
@@ -103,7 +107,7 @@ const Success = () => {
       <Confetti width={width} height={height} recycle={false} numberOfPieces={400} />
 
       <Container className="py-5 d-flex justify-content-center">
-        <Card 
+        <Card
           className="shadow-lg border-0 rounded-4 overflow-hidden text-center"
           style={{ maxWidth: '650px', width: '100%' }}
         >
@@ -123,27 +127,27 @@ const Success = () => {
                 <span className="text-dark">{state.payment.id || 'N/A'}</span>
               </ListGroup.Item>
               <ListGroup.Item className="py-3 fs-6 fw-semibold">
-                Amount Paid:&nbsp; 
+                Amount Paid:&nbsp;
                 <span className="text-primary fw-bold">
                   {state.payment.amount} {state.payment.currency}
                 </span>
               </ListGroup.Item>
               <ListGroup.Item className="py-3 fs-6 fw-semibold">
-                Plan:&nbsp; 
+                Plan:&nbsp;
                 <span className="text-dark">
                   {state.payment.plan} ({state.payment.period})
                 </span>
               </ListGroup.Item>
               {state.payment.nextBilling && (
                 <ListGroup.Item className="py-3 fs-6 fw-semibold">
-                  Next Billing Date:&nbsp; 
+                  Next Billing Date:&nbsp;
                   <span className="text-dark">
                     {new Date(state.payment.nextBilling).toLocaleDateString()}
                   </span>
                 </ListGroup.Item>
               )}
               <ListGroup.Item className="py-3 fs-6 fw-semibold">
-                Status:&nbsp; 
+                Status:&nbsp;
                 <span className={state.payment.status === 'paid' ? "text-success fw-bold" : "text-warning fw-bold"}>
                   {state.payment.status}
                 </span>
@@ -151,7 +155,7 @@ const Success = () => {
             </ListGroup>
 
             <div className="text-center">
-              <Button 
+              <Button
                 variant="primary"
                 size="lg"
                 className="px-5 fw-bold rounded-pill"
