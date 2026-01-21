@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Nav, Card, Badge, Button, Row, Col, Spinner } from 'react-bootstrap';
 import { fetchUserBookings, cancelBooking, completeBooking } from '../api';
 import { formatBookingDate } from '../utils/DateUtils';
@@ -216,7 +217,7 @@ const Bookings = () => {
                     {activeTab === 'cancelled' && 'You have no cancelled bookings.'}
                     {activeTab === 'history' && 'You have no booking history yet.'}
                   </p>
-                  <Button variant="primary" href="/book">
+                  <Button variant="primary" as={Link} to="/book">
                     Book Your First Spot
                   </Button>
                 </Card.Body>
