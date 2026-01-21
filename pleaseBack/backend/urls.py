@@ -11,8 +11,8 @@ urlpatterns = [
     path('api/', include('reviews.urls')),
 ]
 
-# Fallback for SPA (if static missing)
-from django.views.generic import TemplateView
+# Fallback for SPA - serve React app for all non-API routes
 from django.urls import re_path
+from backend.spa_views import serve_react_app
 
-urlpatterns += [re_path(r'^.*$', TemplateView.as_view(template_name='index.html'))]
+urlpatterns += [re_path(r'^.*$', serve_react_app)]
