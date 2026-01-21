@@ -63,11 +63,20 @@ def create_checkout_session(request):
         # Construct URLs
         # Construct URLs
         raw_frontend_url = getattr(settings, 'FRONTEND_URL', '')
-        # Fallback if empty or whitespace
-        if not raw_frontend_url or not str(raw_frontend_url).strip():
-            base_url = "https://parkingspotfinder.onrender.com"
-        else:
+        
+        # Aggressive cleaning of misconfigured env var
+        if raw_frontend_url:
             base_url = str(raw_frontend_url).strip()
+            # Remove common copypaste errors like "FRONTEND_URL="
+            if "=" in base_url:
+                base_url = base_url.split("=")[-1].strip()
+        else:
+            base_url = "https://parkingspotfinder.onrender.com"
+            
+        # Fallback ensuring it looks like a URL
+        if not base_url.startswith("http"):
+            # If completely borked, default to prod
+            base_url = "https://parkingspotfinder.onrender.com"
             
         # Ensure no trailing slash
         if base_url.endswith('/'):
