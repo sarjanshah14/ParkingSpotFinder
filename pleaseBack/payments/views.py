@@ -194,7 +194,7 @@ def verify_payment(request):
                     "billing_period": billing_period,
                     "stripe_subscription_id": sub_id,
                     "amount_paid": amount,
-                    "status": "completed" if session.payment_status == "paid" else "pending",
+                    "status": "completed" if session.payment_status in ["paid", "unpaid"] else "pending",
                     "expires_at": expires_at,
                 },
             )
