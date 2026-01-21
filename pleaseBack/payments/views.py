@@ -61,8 +61,8 @@ def create_checkout_session(request):
             metadata["user_id"] = str(request.user.id)
 
         # Construct URLs
-        success_url = f"{settings.FRONTEND_URL}/#/success?session_id={{CHECKOUT_SESSION_ID}}"
-        cancel_url = f"{settings.FRONTEND_URL}/#/pricing"
+        success_url = f"{settings.FRONTEND_URL}/success?session_id={{CHECKOUT_SESSION_ID}}"
+        cancel_url = f"{settings.FRONTEND_URL}/pricing"
         
         logger.info(f"Stripe URLs: Success={success_url}, Cancel={cancel_url}")
 

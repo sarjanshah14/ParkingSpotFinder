@@ -130,7 +130,7 @@ export const completeBooking = async (bookingId) => {
 ========================= */
 
 export const createCheckoutSession = async (planId, billingPeriod, customerEmail) => {
-  const response = await api.post("/payments/create-checkout-session/", {
+  const response = await api.post("/create-checkout-session/", {
     plan_id: planId,
     billing_period: billingPeriod,
     customer_email: customerEmail
@@ -139,7 +139,7 @@ export const createCheckoutSession = async (planId, billingPeriod, customerEmail
 };
 
 export const verifyPayment = async (sessionId) => {
-  const response = await api.get("/payments/verify-payment/", {
+  const response = await api.get("/verify-payment/", {
     params: { session_id: sessionId },
   });
   return response.data;

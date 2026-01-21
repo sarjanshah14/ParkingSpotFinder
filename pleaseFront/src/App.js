@@ -1,4 +1,4 @@
-import { HashRouter as Router, Routes, Route, Outlet, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Outlet, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
