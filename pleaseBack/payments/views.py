@@ -85,7 +85,7 @@ def create_checkout_session(request):
              # Given the user's frustration, let's hardcode the known good prod URL as a fallback for 'bad' urls.
              base_url = "https://parkingspotfinder.onrender.com"
 
-        base_url = "https://parkingspotfinder.onrender.com"
+        base_url = "https://parking-backend-pypn.onrender.com"
 
         # Ensure no trailing slash
         if base_url.endswith('/'):
