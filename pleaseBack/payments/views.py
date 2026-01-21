@@ -163,6 +163,8 @@ def verify_payment(request):
             "customer_email": customer_email,
             "plan_id": plan_id,
             "billing_period": billing_period,
+            "amount_paid": session.amount_total / 100 if session.amount_total else 0,
+            "currency": (session.currency or "INR").upper(),
         }
 
         if subscription:

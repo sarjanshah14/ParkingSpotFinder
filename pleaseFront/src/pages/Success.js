@@ -43,8 +43,8 @@ const Success = () => {
             error: null,
             payment: {
               id: data.session_id,
-              amount: data.amount_paid || '0.00',
-              currency: 'USD', // Default as API might not return currency
+              amount: data.amount_paid,
+              currency: data.currency || 'INR',
               plan: data.plan_id,
               period: data.billing_period,
               nextBilling: data.current_period_end ? parseInt(data.current_period_end) * 1000 : null,
